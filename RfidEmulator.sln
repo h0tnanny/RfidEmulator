@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.8.34525.116
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RfidEmulator.Api", "RfidEmulator.Api\RfidEmulator.Api.csproj", "{2257776E-13E6-4DB1-B4D7-36324AF96496}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{2257776E-13E6-4DB1-B4D7-36324AF96496}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2257776E-13E6-4DB1-B4D7-36324AF96496}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2257776E-13E6-4DB1-B4D7-36324AF96496}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2257776E-13E6-4DB1-B4D7-36324AF96496}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {DC8F24FB-F001-4D80-8043-43066BB11D09}
+	EndGlobalSection
+EndGlobal
