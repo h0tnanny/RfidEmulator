@@ -24,7 +24,7 @@ public static class Program
             app.UseSwaggerUI();
         }
 
-        app.MapHealthChecks("/");
+        app.MapHealthChecks("/healthCheck");
         app.UseHttpsRedirection();
         // app.UseAuthorization();
         
