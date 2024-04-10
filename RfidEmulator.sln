@@ -5,6 +5,10 @@ VisualStudioVersion = 17.8.34525.116
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RfidEmulator.Api", "RfidEmulator.Api\RfidEmulator.Api.csproj", "{2257776E-13E6-4DB1-B4D7-36324AF96496}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RfidEmulator.Repository", "RfidEmulator.Repository\RfidEmulator.Repository.csproj", "{E605009A-2DC4-4D8C-A944-385980EC8D81}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RfidEmulator.Domain", "RfidEmulator.Domain\RfidEmulator.Domain.csproj", "{808FCFA7-04E2-4561-9DA6-1E344CFF4CAB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +19,14 @@ Global
 		{2257776E-13E6-4DB1-B4D7-36324AF96496}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2257776E-13E6-4DB1-B4D7-36324AF96496}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2257776E-13E6-4DB1-B4D7-36324AF96496}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E605009A-2DC4-4D8C-A944-385980EC8D81}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E605009A-2DC4-4D8C-A944-385980EC8D81}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E605009A-2DC4-4D8C-A944-385980EC8D81}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E605009A-2DC4-4D8C-A944-385980EC8D81}.Release|Any CPU.Build.0 = Release|Any CPU
+		{808FCFA7-04E2-4561-9DA6-1E344CFF4CAB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{808FCFA7-04E2-4561-9DA6-1E344CFF4CAB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{808FCFA7-04E2-4561-9DA6-1E344CFF4CAB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{808FCFA7-04E2-4561-9DA6-1E344CFF4CAB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
