@@ -21,6 +21,11 @@ public static class MapsterConfig
         TypeAdapterConfig<AntennaDto, Antenna>
             .NewConfig()
             .Map(dest => dest.Id, src => Guid.NewGuid());
+
+        TypeAdapterConfig<Antenna, AntennaDto>
+            .NewConfig()
+            .Map(dest => dest.Name, src => src.Name)
+            .Map(dest => dest.Power, src => src.Power);
         
         return services;
     }

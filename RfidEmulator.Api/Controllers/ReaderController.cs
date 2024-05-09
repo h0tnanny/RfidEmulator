@@ -85,8 +85,10 @@ public class ReaderController(ILogger<ReaderController> logger, RepositoryContex
     }
 
     [HttpPut("AddAntenna")]
-    public async Task<IActionResult> AddAntenna(Guid idReader, Antenna antenna, CancellationToken token)
+    public async Task<IActionResult> AddAntenna(Guid idReader, AntennaDto antennaDto, CancellationToken token)
     {
+        var antenna = mapper.Map<Antenna>(antennaDto);
+        
         var reader = await context.Readers.AsNoTracking()
             .Include(reader => reader.Config)
             .Include(reader => reader.Antennas)
@@ -95,8 +97,11 @@ public class ReaderController(ILogger<ReaderController> logger, RepositoryContex
         if(reader is null) return NotFound();
         
         reader.Antennas ??= new List<Antenna>();
-        
         reader.Antennas.Add(antenna);
+        
+        context.Antennas.Add(antenna);
+        context.Readers.Update(reader);
+        
         await context.SaveChangesAsync(token);
         
         await emulatorManager.Restart(reader, token);
