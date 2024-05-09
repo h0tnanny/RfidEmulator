@@ -1,6 +1,5 @@
 using MapsterMapper;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using RfidEmulator.Api.Services;
 using RfidEmulator.Domain.DTOs;
 using RfidEmulator.Domain.Entity;
@@ -8,7 +7,7 @@ using RfidEmulator.Repository;
 
 namespace RfidEmulator.Api.Controllers;
 
-public class ReaderController(ILogger<ReaderController> logger, RepositoryContext context, IMapper mapper,
+public class ReaderController(IReaderService readerService, ILogger<ReaderController> logger, RepositoryContext context, IMapper mapper,
     IEmulatorManager emulatorManager) :
     BaseController<ReaderController>(logger, context, mapper)
 {
@@ -16,11 +15,10 @@ public class ReaderController(ILogger<ReaderController> logger, RepositoryContex
     [ProducesResponseType<IEnumerable<Reader>>(200)]
     public async Task<IActionResult> GetReaders()
     {
-        var readers = await context.Readers.AsNoTracking()
-            .Include(x => x.Config)
-            .Include(x => x.Antennas)
-            .ToListAsync();
+        var readers = await readerService.GetReaders();
 
+        if (readers is null) return NoContent();
+        
         var emulators = emulatorManager.GetEmulators();
         var result = readers.Select(x => new
         {
@@ -30,20 +28,18 @@ public class ReaderController(ILogger<ReaderController> logger, RepositoryContex
         
         return Ok(result);
     }
-    
+
     /// <summary>
     /// Get Reader by ID
     /// </summary>
     /// <param name="id">Id reader</param>
+    /// <param name="cancellationToken"></param>
     /// <returns></returns>
     [HttpGet("GetReader/{id}")]
     [ProducesResponseType<Reader>(200)] // Ok
-    public async Task<IActionResult> GetReader(Guid id)
+    public async Task<IActionResult> GetReader(Guid id, CancellationToken cancellationToken)
     {
-        var reader = await context.Readers.AsNoTracking()
-            .Include(x => x.Config)
-            .Include(x => x.Antennas)
-            .FirstOrDefaultAsync(x => x.Id == id);
+        var reader = await readerService.Get(id, cancellationToken);
 
         return reader is null ? NoContent() : Ok(reader);
     }
@@ -57,9 +53,7 @@ public class ReaderController(ILogger<ReaderController> logger, RepositoryContex
     [HttpPost("CreateReader")]
     public async Task<IActionResult> CreateReader(ReaderDto readerDto, CancellationToken token)
     {
-        var reader = mapper.Map<Reader>(readerDto);
-        await context.Readers.AddAsync(reader, token);
-        await context.SaveChangesAsync(token);
+        var reader = await readerService.Create(readerDto, token);
         
         return Ok(reader);
     }
@@ -67,44 +61,15 @@ public class ReaderController(ILogger<ReaderController> logger, RepositoryContex
     [HttpPut("UpdateReader")]
     public async Task<IActionResult> UpdateReader(Guid id, Reader readerUpdate, CancellationToken token)
     {
-        var reader = await context.Readers.AsNoTracking()
-            .Include(reader => reader.Config)
-            .Include(reader => reader.Antennas)
-            .FirstOrDefaultAsync(x => x.Id == id, token);
+        var reader = await readerService.Update(id, readerUpdate, token);
         
-        if(reader is null) return NotFound();
-        
-        readerUpdate.Config.Reader = reader;
-        
-        context.Readers.Update(readerUpdate);
-        await context.SaveChangesAsync(token);
-
-        await emulatorManager.Restart(readerUpdate, token);
-        
-        return Ok(readerUpdate);
+        return Ok(reader);
     }
 
     [HttpPut("AddAntenna")]
     public async Task<IActionResult> AddAntenna(Guid idReader, AntennaDto antennaDto, CancellationToken token)
     {
-        var antenna = mapper.Map<Antenna>(antennaDto);
-        
-        var reader = await context.Readers.AsNoTracking()
-            .Include(reader => reader.Config)
-            .Include(reader => reader.Antennas)
-            .FirstOrDefaultAsync(x => x.Id == idReader, token);
-        
-        if(reader is null) return NotFound();
-        
-        reader.Antennas ??= new List<Antenna>();
-        reader.Antennas.Add(antenna);
-        
-        context.Antennas.Add(antenna);
-        context.Readers.Update(reader);
-        
-        await context.SaveChangesAsync(token);
-        
-        await emulatorManager.Restart(reader, token);
+        var reader = await readerService.AddAntenna(idReader, antennaDto, token);
 
         return Ok(reader);
     }
@@ -112,15 +77,8 @@ public class ReaderController(ILogger<ReaderController> logger, RepositoryContex
     [HttpDelete("DeleteReader")]
     public async Task<IActionResult> DeleteReader(Guid id, CancellationToken token)
     {
-       await emulatorManager.Stop(id, token);
-       var reader = await context.Readers.AsNoTracking()
-           .Include(x => x.Config)
-           .Include(x => x.Antennas)
-           .FirstOrDefaultAsync(x => x.Id == id, token);
-       if(reader is null) return NotFound();
-       
-       context.Readers.Remove(reader);
-       await context.SaveChangesAsync(token);
-       return Ok();
+        await readerService.Remove(id, token);
+        
+       return NoContent();
     }
 }
