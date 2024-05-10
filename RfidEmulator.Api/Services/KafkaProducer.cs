@@ -8,7 +8,7 @@ namespace RfidEmulator.Api.Services;
 
 public class KafkaProducer : IKafkaProducer
 { 
-    private readonly IProducer<string, string> _producer;
+    private readonly IProducer<Null, string> _producer;
     private readonly ILogger<KafkaProducer> _logger;
     private readonly KafkaConfig _config;
     private readonly IHubContext<EmulatorHub> _hub;
@@ -17,8 +17,8 @@ public class KafkaProducer : IKafkaProducer
     {
         _logger = logger;
         _config = options.Value;
-        var config = new ProducerConfig { BootstrapServers = options.Value.BootstrapServers};
-        _producer = new ProducerBuilder<string, string>(config).Build();
+        var config = new ProducerConfig { BootstrapServers = options.Value.BootstrapServers, MessageTimeoutMs = 1000};
+        _producer = new ProducerBuilder<Null, string>(config).Build();
         _hub = hub;
     }
 
@@ -32,10 +32,12 @@ public class KafkaProducer : IKafkaProducer
             }, cancellationToken);
             
             await _hub.Clients.All.SendAsync("Receive", message, cancellationToken: cancellationToken);
+            
+            await Task.Delay(_config.TimeOutReceiveMs, cancellationToken);
         }
-        catch (ProduceException<string, string> e)
+        catch (Exception exception)
         {
-            await _hub.Clients.All.SendAsync("Receive",$"Delivery failed: {e.Error.Reason}", cancellationToken: cancellationToken);
+            Console.WriteLine(exception?.Message);
         }
     }
 

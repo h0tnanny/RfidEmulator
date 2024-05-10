@@ -38,13 +38,14 @@ public class Emulator(Reader reader, IKafkaProducer producer) : BackgroundServic
             var messages = Enumerable.Range(config.CountsPerSecTimeMin, config.CountsPerSecTimeMax)
                 .Select(x => new
                 {
-                    Reader = JsonConvert.SerializeObject(config, Formatting.Indented, new JsonSerializerSettings()
+                    Reader = JsonConvert.SerializeObject(config, new JsonSerializerSettings()
                     {
                         ReferenceLoopHandling = ReferenceLoopHandling.Ignore
                     }),
                     TagsId = tagsId[new Random().Next(0, tagsId.Count)],
                     AntennaId = antennasId[new Random().Next(0, antennasId.Count)],
                     Rssi = new Random().Next(config.UpperRssiLevelMin, config.UpperRssiLevelMax),
+                    CountPerSec = new Random().Next(config.CountsPerSecTimeMin, config.CountsPerSecTimeMax),
                     DateTime = DateTime.UtcNow
                 });
 

@@ -7,7 +7,7 @@ namespace RfidEmulator.Api.Controllers;
 [ApiController]
 public sealed class OptimizationController(IOptimizationService optimizationService) : ControllerBase
 {
-    [HttpPost("/start")]
+    [HttpPost("/Start")]
     public async Task<IActionResult> Start(CancellationToken cancellationToken = default)
     {
         await optimizationService.Start(cancellationToken);
@@ -15,7 +15,7 @@ public sealed class OptimizationController(IOptimizationService optimizationServ
         return Ok();
     }
 
-    [HttpPost("/stop")]
+    [HttpPost("/Stop")]
     public async Task<IActionResult> Stop(CancellationToken cancellationToken = default)
     {
         await optimizationService.Stop(cancellationToken);
