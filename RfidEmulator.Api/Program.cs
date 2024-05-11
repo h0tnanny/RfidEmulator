@@ -41,7 +41,7 @@ public static class Program
         builder.Services.AddSingleton<IKafkaProducer, KafkaProducer>();
         builder.Services.AddSingleton<IEmulatorManager, EmulatorManager>();
         builder.Services.AddScoped<IReaderService, ReaderService>();
-        builder.Services.AddScoped<IOptimizationService, OptimizationService>();
+        builder.Services.AddSingleton<IOptimizationService, OptimizationService>();
         
         builder.Services.AddControllers();
         // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle

@@ -6,39 +6,57 @@ using RfidEmulator.Domain.Entity;
 
 namespace RfidEmulator.Api.Services;
 
-public sealed class OptimizationService(IOptions<PythonService> optionsService, 
-    IOptions<KafkaConfig> optionsKafka, IReaderService readerService) 
-    : BackgroundService, IOptimizationService
+public sealed class OptimizationService : BackgroundService, IOptimizationService
 {
-    private bool IsEnabled { get; set; }
-    private CancellationToken StopToken { get; set; }
+    private readonly IOptions<PythonService> _optionsService;
+    private readonly IOptions<KafkaConfig> _optionsKafka;
+    private readonly IServiceProvider _serviceProvider;
+
+    public OptimizationService(IOptions<PythonService> optionsService, 
+        IOptions<KafkaConfig> optionsKafka, IServiceProvider serviceProvider)
+    {
+        _optionsService = optionsService;
+        _optionsKafka = optionsKafka;
+        _serviceProvider = serviceProvider;
+    }
     
-    protected override Task ExecuteAsync(CancellationToken stoppingToken)
+    private bool IsEnabled { get; set; }
+    private CancellationTokenSource StopToken { get; set; }
+
+    private async Task StartConsumerLoop(CancellationToken stoppingToken)
     {
         var config = new ConsumerConfig
         {
-            GroupId = optionsService.Value.KafkaGroupId,
-            BootstrapServers = optionsKafka.Value.BootstrapServers,
+            GroupId = _optionsService.Value.KafkaGroupId,
+            BootstrapServers = _optionsKafka.Value.BootstrapServers,
             AutoOffsetReset = AutoOffsetReset.Earliest
         };
-        var topic = optionsService.Value.KafkaTopic;
+        var topic = _optionsService.Value.KafkaTopic;
 
         using var consumer = new ConsumerBuilder<Ignore, string>(config).Build();
+        using var scope = _serviceProvider.CreateScope();
+        var readerServices = scope.ServiceProvider.GetRequiredService<IReaderService>();
         consumer.Subscribe(topic);
+        IsEnabled = true;
         try
         {
-            while (!StopToken.IsCancellationRequested)
+            while (!stoppingToken.IsCancellationRequested)
             {
                 try
                 {
-                    var consumeResult = consumer.Consume(CancellationToken.None);
+                    var consumeResult = await Task.Run(() => consumer.Consume(100), stoppingToken);
+                    if (consumeResult is null)
+                    {
+                        scope.Dispose();
+                        continue;
+                    }
                     var message = consumeResult.Message.Value;
 
                     var optimization = JsonConvert.DeserializeObject<OptimizationConfig>(message);
 
                     if (optimization == null) continue;
                     
-                    var reader = readerService.Get(optimization.ReaderId, stoppingToken).Result;
+                    var reader = readerServices.Get(optimization.ReaderId, stoppingToken).Result;
                     if (reader == null) continue;
                         
                     if (optimization.CountsPerSecTimeMin.HasValue)
@@ -55,8 +73,8 @@ public sealed class OptimizationService(IOptions<PythonService> optionsService,
                     
                     if (optimization.Tags.HasValue)
                         reader.Config.Tags = optimization.Tags.Value;
-
-                    readerService.Update(optimization.ReaderId, reader, stoppingToken);
+                    
+                    await readerServices.Update(optimization.ReaderId, reader, stoppingToken);
                 }
                 catch (ConsumeException e)
                 {
@@ -68,8 +86,11 @@ public sealed class OptimizationService(IOptions<PythonService> optionsService,
         {
             consumer.Close();
         }
-        
-        return Task.CompletedTask;
+    }
+    
+    protected override Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        return StartConsumerLoop(stoppingToken);
     }
 
     public Task Start(CancellationToken cancellationToken)
@@ -77,17 +98,13 @@ public sealed class OptimizationService(IOptions<PythonService> optionsService,
         if (IsEnabled) return Task.CompletedTask;
         
         StopToken = new();
-
-        ExecuteAsync(cancellationToken);
-
-        IsEnabled = true;
-
-        return Task.CompletedTask;
+        
+        return ExecuteAsync(StopToken.Token);
     }
 
     public Task Stop(CancellationToken cancellationToken)
     {
-        StopToken.ThrowIfCancellationRequested();
+        StopToken.Cancel();
         IsEnabled = false;
         
         return Task.CompletedTask;
