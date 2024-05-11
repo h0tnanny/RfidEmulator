@@ -13,11 +13,11 @@ public sealed class PythonServiceController(IOptions<PythonService> pythonServic
     [HttpPost("SendData")]
     public async Task<IActionResult> SendData(OptimizationShortConfig config, CancellationToken token = default)
     {
-        var options = new RestClientOptions(pythonService.Value.HostServer);
-        var client = new RestClient(options);
+        var client = new RestClient(pythonService.Value.HostServer);
         var request = new RestRequest(pythonService.Value.EndpointName, Method.Post);
         request.AddJsonBody(config);
-        await client.PostAsync(request, token);
+        
+        await client.ExecuteAsync(request, token);
 
         return Ok();
     }
