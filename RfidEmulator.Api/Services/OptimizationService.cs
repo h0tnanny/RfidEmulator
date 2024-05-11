@@ -10,16 +10,18 @@ public sealed class OptimizationService(IOptions<PythonService> optionsService,
     IOptions<KafkaConfig> optionsKafka, IReaderService readerService) 
     : BackgroundService, IOptimizationService
 {
+    private bool IsEnabled { get; set; }
     private CancellationToken StopToken { get; set; }
     
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
         var config = new ConsumerConfig
         {
+            GroupId = optionsService.Value.KafkaGroupId,
             BootstrapServers = optionsKafka.Value.BootstrapServers,
             AutoOffsetReset = AutoOffsetReset.Earliest
         };
-        var topic = optionsService.Value.OptimizationTopic;
+        var topic = optionsService.Value.KafkaTopic;
 
         using var consumer = new ConsumerBuilder<Ignore, string>(config).Build();
         consumer.Subscribe(topic);
@@ -32,7 +34,7 @@ public sealed class OptimizationService(IOptions<PythonService> optionsService,
                     var consumeResult = consumer.Consume(CancellationToken.None);
                     var message = consumeResult.Message.Value;
 
-                    var optimization = JsonConvert.DeserializeObject<Optimization>(message);
+                    var optimization = JsonConvert.DeserializeObject<OptimizationConfig>(message);
 
                     if (optimization == null) continue;
                     
@@ -72,9 +74,13 @@ public sealed class OptimizationService(IOptions<PythonService> optionsService,
 
     public Task Start(CancellationToken cancellationToken)
     {
+        if (IsEnabled) return Task.CompletedTask;
+        
         StopToken = new();
 
         ExecuteAsync(cancellationToken);
+
+        IsEnabled = true;
 
         return Task.CompletedTask;
     }
@@ -82,7 +88,8 @@ public sealed class OptimizationService(IOptions<PythonService> optionsService,
     public Task Stop(CancellationToken cancellationToken)
     {
         StopToken.ThrowIfCancellationRequested();
-
+        IsEnabled = false;
+        
         return Task.CompletedTask;
     }
 }

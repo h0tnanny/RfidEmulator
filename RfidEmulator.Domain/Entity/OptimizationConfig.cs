@@ -1,6 +1,6 @@
 namespace RfidEmulator.Domain.Entity;
 
-public class Optimization
+public class OptimizationConfig
 {
     public Guid ReaderId { get; set; }
     public int? CountsPerSecTimeMin { get; set; }

@@ -35,9 +35,9 @@ public class KafkaProducer : IKafkaProducer
             
             await Task.Delay(_config.TimeOutReceiveMs, cancellationToken);
         }
-        catch (Exception exception)
+        catch
         {
-            Console.WriteLine(exception?.Message);
+            // ignored
         }
     }
 

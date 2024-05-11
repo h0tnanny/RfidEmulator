@@ -6,7 +6,7 @@ using RfidEmulator.Repository;
 
 namespace RfidEmulator.Api.Services;
 
-public class ReaderService(RepositoryContext context, IMapper mapper,
+public sealed class ReaderService(RepositoryContext context, IMapper mapper,
     IEmulatorManager emulatorManager) : IReaderService
 {
     public async Task<Reader?> Get(Guid id, CancellationToken token)
@@ -93,5 +93,27 @@ public class ReaderService(RepositoryContext context, IMapper mapper,
         await emulatorManager.Restart(reader, token);
 
         return reader;
+    }
+
+    public async Task RemoveAntenna(Guid id, CancellationToken token = default)
+    {
+        var reader = await context.Readers.AsNoTracking()
+            .Include(reader => reader.Antennas)
+            .FirstOrDefaultAsync(x => x.Antennas != null && x.Antennas.Any(ant => ant.Id == id), token);
+        
+        if(reader is null) return;
+        
+        var antenna = await context.Antennas.AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken: token);
+
+        if (antenna == null) return;
+        
+        context.Remove(antenna);
+
+        reader.Antennas?.Remove(antenna);
+        
+        await context.SaveChangesAsync(token);
+
+        await emulatorManager.Restart(reader, token);
     }
 }

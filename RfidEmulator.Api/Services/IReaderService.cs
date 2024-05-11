@@ -11,4 +11,5 @@ public interface IReaderService
     public Task<Reader?> Update(Guid id, Reader readerUpdate, CancellationToken token = default);
     public Task Remove(Guid id, CancellationToken token = default);
     public Task<Reader?> AddAntenna(Guid idReader, AntennaDto antennaDto, CancellationToken token = default);
+    public Task RemoveAntenna(Guid id, CancellationToken token = default);
 }

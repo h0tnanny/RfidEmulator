@@ -58,6 +58,13 @@ public class ReaderController(IReaderService readerService, ILogger<ReaderContro
         return Ok(reader);
     }
 
+    /// <summary>
+    /// Update a reader
+    /// </summary>
+    /// <param name="id"></param>
+    /// <param name="readerUpdate"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
     [HttpPut("UpdateReader")]
     public async Task<IActionResult> UpdateReader(Guid id, Reader readerUpdate, CancellationToken token)
     {
@@ -66,6 +73,13 @@ public class ReaderController(IReaderService readerService, ILogger<ReaderContro
         return Ok(reader);
     }
 
+    /// <summary>
+    /// Add antenna to reader by id
+    /// </summary>
+    /// <param name="idReader"></param>
+    /// <param name="antennaDto"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
     [HttpPut("AddAntenna")]
     public async Task<IActionResult> AddAntenna(Guid idReader, AntennaDto antennaDto, CancellationToken token)
     {
@@ -74,11 +88,31 @@ public class ReaderController(IReaderService readerService, ILogger<ReaderContro
         return Ok(reader);
     }
 
+    /// <summary>
+    /// Delete a reader
+    /// </summary>
+    /// <param name="id"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
     [HttpDelete("DeleteReader")]
     public async Task<IActionResult> DeleteReader(Guid id, CancellationToken token)
     {
         await readerService.Remove(id, token);
         
        return NoContent();
+    }
+
+    /// <summary>
+    /// Remove a antenna by id
+    /// </summary>
+    /// <param name="id"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    [HttpDelete("RemoveAntenna")]
+    public async Task<IActionResult> RemoveAntenna(Guid id, CancellationToken token = default)
+    {
+        await readerService.RemoveAntenna(id, token);
+
+        return NoContent();
     }
 }
