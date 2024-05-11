@@ -16,7 +16,7 @@ public sealed class PythonServiceController(IOptions<PythonService> pythonServic
         var options = new RestClientOptions(pythonService.Value.HostServer);
         var client = new RestClient(options);
         var request = new RestRequest(pythonService.Value.EndpointName, Method.Post);
-        request.AddBody(config);
+        request.AddJsonBody(config);
         await client.PostAsync(request, token);
 
         return Ok();
