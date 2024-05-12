@@ -47,45 +47,55 @@ public sealed class OptimizationService : BackgroundService, IOptimizationServic
                     var consumeResult = await Task.Run(() => consumer.Consume(100), stoppingToken);
                     if (consumeResult is null)
                     {
-                        scope.Dispose();
                         continue;
                     }
+
                     var message = consumeResult.Message.Value;
 
                     var optimization = JsonConvert.DeserializeObject<OptimizationConfig>(message);
 
                     if (optimization == null) continue;
-                    
+
                     var reader = readerServices.Get(optimization.ReaderId, stoppingToken).Result;
                     if (reader == null) continue;
-                        
-                    if (optimization.CountsPerSecTimeMin.HasValue)
-                        reader.Config.CountsPerSecTimeMin = optimization.CountsPerSecTimeMin.Value;
-                            
-                    if (optimization.CountsPerSecTimeMax.HasValue)
-                        reader.Config.CountsPerSecTimeMax = optimization.CountsPerSecTimeMax.Value;
+
+                    var countsPerSecTimeMin = optimization.CountsPerSecTimeMin;
+                    var countsPerSecTimeMax = optimization.CountsPerSecTimeMax;
+                    var rssiMin = optimization.UpperRssiLevelMin;
+                    var rssiMax = optimization.UpperRssiLevelMax;
                     
-                    if (optimization.UpperRssiLevelMin.HasValue)
-                        reader.Config.UpperRssiLevelMin = optimization.UpperRssiLevelMin.Value;
-                    
-                    if (optimization.UpperRssiLevelMax.HasValue)
-                        reader.Config.UpperRssiLevelMax = optimization.UpperRssiLevelMax.Value;
-                    
+                    if (countsPerSecTimeMin.HasValue && countsPerSecTimeMax.HasValue &&
+                        countsPerSecTimeMin.Value < countsPerSecTimeMax.Value)
+                    {
+                        reader.Config.CountsPerSecTimeMin = countsPerSecTimeMin.Value;
+                        reader.Config.CountsPerSecTimeMax = countsPerSecTimeMin.Value;
+                    }
+
+                    if (rssiMin.HasValue && rssiMax.HasValue && rssiMin.Value < rssiMax.Value)
+                    {
+                        reader.Config.UpperRssiLevelMin = rssiMin.Value;
+                        reader.Config.UpperRssiLevelMax = rssiMax.Value;
+                    }
+
                     if (optimization.Tags.HasValue)
                         reader.Config.Tags = optimization.Tags.Value;
-                    
+
                     await readerServices.Update(optimization.ReaderId, reader, stoppingToken);
                 }
-                catch (ConsumeException e)
+                catch
                 {
-                    Console.WriteLine($"Error occurred: {e.Error.Reason}");
+                    // ignored
                 }
             }
         }
-        catch (OperationCanceledException)
+        catch
         {
-            consumer.Close();
+            // ignored
         }
+        
+        IsEnabled = false;
+        consumer.Close();
+        scope.Dispose();
     }
     
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
