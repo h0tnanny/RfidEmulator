@@ -9,12 +9,12 @@ public class Emulator(Reader reader, IKafkaProducer producer) : BackgroundServic
 
     public bool IsRunning { get; private set; }
     
-    public async Task Start()
+    public void Start()
     {
         CancellationToken = new();
         IsRunning = true;
 
-        await ExecuteAsync(CancellationToken.Token);
+        ExecuteAsync(CancellationToken.Token);
     }
 
     public Task Stop()
@@ -66,8 +66,8 @@ public class Emulator(Reader reader, IKafkaProducer producer) : BackgroundServic
         Stop();
     }
 
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        await Emulation(stoppingToken);
+        return Emulation(stoppingToken);
     }
 }

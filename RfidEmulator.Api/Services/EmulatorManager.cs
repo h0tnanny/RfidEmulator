@@ -7,13 +7,15 @@ public sealed class EmulatorManager(ILogger<EmulatorManager> logger, IKafkaProdu
 {
     private readonly ConcurrentDictionary<Guid, IEmulator> _emulators = new();
     
-    public async Task Start(Reader reader, CancellationToken token)
+    public Task Start(Reader reader, CancellationToken token)
     {
         var emulator = new Emulator(reader, producer);
         if (_emulators.TryAdd(reader.Id, emulator))
         {
-            await emulator.Start();
+            emulator.Start();
         }
+
+        return Task.CompletedTask;
     }
 
     public async Task Stop(Guid id, CancellationToken token)

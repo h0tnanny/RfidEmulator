@@ -34,8 +34,6 @@ public sealed class OptimizationService : BackgroundService, IOptimizationServic
         var topic = _optionsService.Value.KafkaTopic;
 
         using var consumer = new ConsumerBuilder<Ignore, string>(config).Build();
-        using var scope = _serviceProvider.CreateScope();
-        var readerServices = scope.ServiceProvider.GetRequiredService<IReaderService>();
         consumer.Subscribe(topic);
         IsEnabled = true;
         try
@@ -44,7 +42,9 @@ public sealed class OptimizationService : BackgroundService, IOptimizationServic
             {
                 try
                 {
-                    var consumeResult = await Task.Run(() => consumer.Consume(100), stoppingToken);
+                    using var scope = _serviceProvider.CreateScope();
+                    var readerServices = scope.ServiceProvider.GetRequiredService<IReaderService>();
+                    var consumeResult = await Task.Run(() => consumer.Consume(300), stoppingToken);
                     if (consumeResult is null)
                     {
                         continue;
@@ -52,8 +52,9 @@ public sealed class OptimizationService : BackgroundService, IOptimizationServic
 
                     var message = consumeResult.Message.Value;
 
+                    
                     var optimization = JsonConvert.DeserializeObject<OptimizationConfig>(message);
-
+                    
                     if (optimization == null) continue;
 
                     var reader = readerServices.Get(optimization.ReaderId, stoppingToken).Result;
@@ -68,7 +69,7 @@ public sealed class OptimizationService : BackgroundService, IOptimizationServic
                         countsPerSecTimeMin.Value < countsPerSecTimeMax.Value)
                     {
                         reader.Config.CountsPerSecTimeMin = countsPerSecTimeMin.Value;
-                        reader.Config.CountsPerSecTimeMax = countsPerSecTimeMin.Value;
+                        reader.Config.CountsPerSecTimeMax = countsPerSecTimeMax.Value;
                     }
 
                     if (rssiMin.HasValue && rssiMax.HasValue && rssiMin.Value < rssiMax.Value)
@@ -80,22 +81,24 @@ public sealed class OptimizationService : BackgroundService, IOptimizationServic
                     if (optimization.Tags.HasValue)
                         reader.Config.Tags = optimization.Tags.Value;
 
-                    await readerServices.Update(optimization.ReaderId, reader, stoppingToken);
+                    await readerServices.Update(optimization.ReaderId, reader, CancellationToken.None);
+                    scope.Dispose();
                 }
-                catch
+                catch (Exception ex)
                 {
+                    Console.WriteLine(ex.Message);
                     // ignored
                 }
             }
         }
-        catch
+        catch (Exception ex)
         {
+            Console.WriteLine(ex.Message);
             // ignored
         }
         
         IsEnabled = false;
         consumer.Close();
-        scope.Dispose();
     }
     
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
