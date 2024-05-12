@@ -8,17 +8,24 @@ namespace RfidEmulator.Api.Controllers;
 
 [Route("[controller]")]
 [ApiController]
-public sealed class PythonServiceController(IOptions<PythonService> pythonService) : ControllerBase
+public sealed class PythonServiceController : ControllerBase
 {
+    private readonly IOptions<PythonService> _pythonService;
+
+    public PythonServiceController(IOptions<PythonService> pythonService)
+    {
+        _pythonService = pythonService;
+    }
+    
     [HttpPost("SendData")]
     public async Task<IActionResult> SendData(OptimizationShortConfig config, CancellationToken token = default)
     {
-        var client = new RestClient(pythonService.Value.HostServer);
-        var request = new RestRequest(pythonService.Value.EndpointName, Method.Post);
+        var client = new RestClient(_pythonService.Value.HostServer);
+        var request = new RestRequest(_pythonService.Value.EndpointName, Method.Post);
         request.AddJsonBody(config);
         
-        await client.ExecuteAsync(request, token);
+        var response = await client.ExecuteAsync(request, token);
 
-        return Ok();
+        return Ok(response);
     }
 }
